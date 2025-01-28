@@ -1,29 +1,35 @@
 from flask import Flask, request, jsonify
 import openai
+import os
+
+# Configurează cheia API OpenAI
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 app = Flask(__name__)
 
-# Setează cheia API OpenAI (înlocuiește cu cheia ta)
-openai.api_key = "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"
+@app.route("/", methods=["GET"])
+def home():
+    return "Serverul funcționează!"
 
-@app.route("/", methods=["POST"])
-def handle_request():
-    data = request.json
-    user_message = data.get("message", "")  # Mesajul trimis de utilizator
+@app.route("/chat", methods=["POST"])
+def chat():
+    data = request.get_json()
+    user_message = data.get("message")
+    user_name = data.get("user")
 
-    # Creează răspuns cu OpenAI
-    try:
-        response = openai.Completion.create(
-            engine="text-davinci-003",  # Poți folosi și "gpt-4" dacă ai acces
-            prompt=user_message,
-            max_tokens=100
-        )
-        ai_response = response.choices[0].text.strip()
-    except Exception as e:
-        ai_response = "Îmi pare rău, nu am reușit să procesez cererea."
+    if not user_message or not user_name:
+        return jsonify({"error": "Missing message or user"}), 400
 
-    # Trimite răspunsul înapoi
-    return jsonify(ai_response)
+    # Trimiterea mesajului către OpenAI
+    response = openai.Completion.create(
+        model="text-davinci-003",
+        prompt=user_message,
+        max_tokens=150
+    )
+    
+    reply = response.choices[0].text.strip()
+    return jsonify({"response": reply})
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(debug=True, host="0.0.0.0", port=5000)
+
