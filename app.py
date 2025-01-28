@@ -14,16 +14,18 @@ app = Flask(__name__)
 @app.route("/chat", methods=["POST"])
 def chat():
     try:
-        # Primește datele JSON din cererea POST
+        # Obține datele din cererea JSON
         data = request.get_json()
+
+        if not data:
+            return jsonify({"error": "No JSON data provided"}), 400
         
-        # Obține mesajul și numele utilizatorului
+        # Extrage mesajul și numele utilizatorului
         user_message = data.get("message")
         user_name = data.get("user")
 
-        # Verifică dacă 'message' și 'user' sunt prezente
         if not user_message or not user_name:
-            return jsonify({"error": "Missing 'message' or 'user' field"}), 400
+            return jsonify({"error": "Missing message or user"}), 400
 
         # Trimiterea mesajului către OpenAI
         response = openai.Completion.create(
@@ -32,15 +34,20 @@ def chat():
             max_tokens=150
         )
         
-        # Obține răspunsul de la OpenAI
+        # Extrage răspunsul
         reply = response.choices[0].text.strip()
 
-        # Răspunde la cerere cu mesajul generat
+        # Răspunsul la întrebarea utilizatorului
         return jsonify({"response": reply})
 
     except Exception as e:
-        # În caz de eroare, returnează un mesaj de debugging
+        # Capturarea erorilor și returnarea mesajului de eroare
         return jsonify({"error": str(e)}), 500
+
+if __name__ == "__main__":
+    # Se pornește serverul Flask
+    app.run(debug=True, host="0.0.0.0", port=5001)
+
 
 if __name__ == "__main__":
     app.run(debug=True)
